@@ -267,6 +267,15 @@ HTML;
                 ],
                 'sku_values' => [],
             ],
+            [
+                'type' => 'help',
+                'id' => 'editorhooks_help',
+                'name' => 'DEMO Field Help',             // can be empty if you don't need name
+                'tooltip' => 'shop/plugins/editorhooks', // can be empty if you don't need tooltip
+                'css_class' => 'editorhooks-plugin-field editorhooks-plugin-help',
+                'placement' => 'bottom',
+                'default_value' => '<b><u>Any custom HTML here.</u></b>',
+            ],
         ];
 
         foreach($product['skus'] as $sku_id => $sku) {
@@ -419,4 +428,120 @@ HTML;
         ];
     }
 
+    public function backendProdList(&$params)
+    {
+        return [
+            'header_left' => '<em>editorhooks</em>',
+            'header_right' => '<em style="margin-right:1.25rem">editorhooks</em>',
+            'footer_left' => '<em class="errormsg">editorhooks</em>',
+            'footer_right' => '<em class="errormsg">editorhooks</em>',
+        ];
+    }
+
+    public function backendProdCategories(&$params)
+    {
+        return [
+            'header_left' => '<em>editorhooks</em>',
+            'header_right' => '<em style="margin-right:1.25rem">editorhooks</em>',
+        ];
+    }
+
+    public function backendProdSets(&$params)
+    {
+        return [
+            'header_left' => '<em>editorhooks</em>',
+            'header_right' => '<em>editorhooks</em>',
+        ];
+    }
+
+    /** WA2.0 боковое меню магазина (backend_extended_menu) */
+    public function backendExtendedMenu($params)
+    {
+        $wa_app_url = wa('shop')->getAppUrl(null, true);
+
+        // Вставить новый пункт в глобальном меню перед пунктом Витрина ('storefront')
+        $offset = array_search('storefront', array_keys($params['menu']));
+        $params['menu'] = array_merge(
+            array_slice($params['menu'], 0, $offset),
+            array('editorhooks' => [
+                "id" => "editorhooks",
+                "name" => _wp('editorhooks'),
+                "icon" => '<i class="fas fa-solid fa-bug"></i>',
+                "placement" => 'body', // или 'footer' чтобы разместить пункт внизу; если ничего не указать, будет 'body'
+                "submenu" => [
+                    [
+                        "url" => "{$wa_app_url}?plugin=editorhooks&action=one",
+                        "name" => _wp('One'),
+                    ],
+                    [
+                        "url" => "{$wa_app_url}?plugin=editorhooks&action=two",
+                        "name" => _wp('Two'),
+                    ],
+                    [
+                        "url" => "{$wa_app_url}?plugin=editorhooks&action=three",
+                        "name" => _wp('Three'),
+                    ],
+                ],
+            ]),
+            array_slice($params['menu'], $offset, null)
+        );
+
+        // Вставить подпункт в меню "Отчёты"
+        $params['menu']['reports']['submenu'][] = [
+            "url" => "{$wa_app_url}?plugin=editorhooks",
+            "name" => _wp('editorhooks'),
+        ];
+    }
+
+    /** WA2.0 меню массовых действий с товарами */
+    public function backendProdMassActions(&$params)
+    {
+        // Нужно модифицировать список действий, уже имеющийся в $params
+        $result =& $params['actions'];
+
+        $wa_app_url = wa()->getAppUrl(null, true);
+
+        // Пример добавления действия в существующий раздел "Импорт/Экспорт" ($result["export"])
+        // Параметр redirect_url означает, что браузер перейдёт на указанный URL,
+        // а список выбранных товаров будет передан в GET параметре products_hash, например: id/26888
+        $result["export"]["actions"][] = [
+            "id" => "editorhooks_export",
+            "name" => "Плагин экспорта editorhooks",
+            "redirect_url" => $wa_app_url."?plugin=editorhooks&action=export",
+            "icon" => '<i class="fas fa-solid fa-bug"></i>',
+        ];
+
+        // Пример добавления действия в существующий раздел "Редактирование" ($result["edit"])
+        // Параметр action_url означает, что на указанный URL будет в фоне отправлен запрос.
+        // Cписок выбранных товаров будет передан в POST параметре products_hash, например: id/26888
+        $result["edit"]["actions"][] = [
+            "id" => "editorhooks_action",
+            "name" => "Действие с товарами editorhooks",
+            "action_url" => $wa_app_url."?plugin=editorhooks&action=productsMassAction",
+            "icon" => '<i class="fas fa-solid fa-bug"></i>',
+        ];
+
+        // Пример добавления новой группы действий от плагина.
+        // Параметр "pinned" означает, что действие будет показано не только в выпадающем меню "все действия",
+        // но и на панели, где его будет видно всегда (если хватает места).
+        // Отсутствие action_url и redirect_url - это ошибка. Такие действия показываются в меню,
+        // но попытка их применить показывает сообщение о том, что действие не может быть выполнено.
+        $result["editorhooks_group_1"] = [
+            "id" => "editorhooks_group_1",
+            "name" => "Действия editorhooks",
+            "actions" => [
+                [
+                    "id" => "editorhooks_action_1",
+                    "name" => "Раз",
+                    "pinned" => true,
+                    "icon" => '<i class="fas fa-solid fa-bug"></i>',
+                ],
+                [
+                    "id" => "editorhooks_action_2",
+                    "name" => "Два",
+                ],
+            ]
+        ];
+
+    }
 }

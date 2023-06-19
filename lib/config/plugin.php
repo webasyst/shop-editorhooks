@@ -5,7 +5,7 @@ return array(
     'title'       => ('Product Editor Hooks'),
     'description' => ('New product editor integration example'),
     'vendor'      => 'webasyst',
-    'version'     => '1.0.0',
+    'version'     => '2.0.0',
 
     'handlers' => array(
         'routing' => 'customRouting',
@@ -17,5 +17,11 @@ return array(
         'backend_prod_presave' => 'backendProdPreSave',
         'backend_prod_save' => 'backendProdSave',
         'category_save' => 'categorySave',
+
+        'backend_prod_list' => 'backendProdList',
+        'backend_prod_sets' => 'backendProdSets',
+        'backend_prod_categories' => 'backendProdCategories',
+        'backend_prod_mass_actions' => 'backendProdMassActions',
+        'backend_extended_menu'   => 'backendExtendedMenu',
     ),
 );
