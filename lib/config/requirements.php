@@ -2,6 +2,6 @@
 return array(
     'app.shop' => array(
         'strict'  => true,
-        'version' => '>=10.0.0',
+        'version' => '>=10.0.2',
     ),
 );

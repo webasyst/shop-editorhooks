@@ -457,40 +457,20 @@ HTML;
     /** WA2.0 боковое меню магазина (backend_extended_menu) */
     public function backendExtendedMenu($params)
     {
-        $wa_app_url = wa('shop')->getAppUrl(null, true);
-
         // Вставить новый пункт в глобальном меню перед пунктом Витрина ('storefront')
-        $offset = array_search('storefront', array_keys($params['menu']));
-        $params['menu'] = array_merge(
-            array_slice($params['menu'], 0, $offset),
-            array('editorhooks' => [
-                "id" => "editorhooks",
-                "name" => _wp('editorhooks'),
-                "icon" => '<i class="fas fa-solid fa-bug"></i>',
-                "placement" => 'body', // или 'footer' чтобы разместить пункт внизу; если ничего не указать, будет 'body'
-                "submenu" => [
-                    [
-                        "url" => "{$wa_app_url}?plugin=editorhooks&action=one",
-                        "name" => _wp('One'),
-                    ],
-                    [
-                        "url" => "{$wa_app_url}?plugin=editorhooks&action=two",
-                        "name" => _wp('Two'),
-                    ],
-                    [
-                        "url" => "{$wa_app_url}?plugin=editorhooks&action=three",
-                        "name" => _wp('Three'),
-                    ],
-                ],
-            ]),
-            array_slice($params['menu'], $offset, null)
-        );
+        shopMainMenu::createSection($params['menu'], 'editorhooks', _wp('editorhooks'), [
+            'icon' => '<i class="fas fa-solid fa-bug"></i>',
+            'insert_before' => 'storefront', // или можно 'insert_after', или ничего не указать, тогда будет в конце
+            'placement' => 'body', // или 'footer' чтобы разместить пункт внизу; если ничего не указать, будет как в insert_before (или 'body')
+        ]);
 
-        // Вставить подпункт в меню "Отчёты"
-        $params['menu']['reports']['submenu'][] = [
-            "url" => "{$wa_app_url}?plugin=editorhooks",
-            "name" => _wp('editorhooks'),
-        ];
+        // Вставить три пункта в только что созданный глобальный пункт
+        shopMainMenu::createSubsection($params['menu'], 'editorhooks', _wp('One'), "?plugin=editorhooks&action=one");
+        shopMainMenu::createSubsection($params['menu'], 'editorhooks', _wp('Two'), "?plugin=editorhooks&action=two");
+        shopMainMenu::createSubsection($params['menu'], 'editorhooks', _wp('Three'), "?plugin=editorhooks&action=three");
+
+        // Вставить подпункт в существующее меню "Отчёты"
+        shopMainMenu::createSubsection($params['menu'], 'reports', _wp('editorhooks'), "?plugin=editorhooks");
     }
 
     /** WA2.0 меню массовых действий с товарами */
@@ -522,24 +502,41 @@ HTML;
         ];
 
         // Пример добавления новой группы действий от плагина.
-        // Параметр "pinned" означает, что действие будет показано не только в выпадающем меню "все действия",
-        // но и на панели, где его будет видно всегда (если хватает места).
-        // Отсутствие action_url и redirect_url - это ошибка. Такие действия показываются в меню,
-        // но попытка их применить показывает сообщение о том, что действие не может быть выполнено.
         $result["editorhooks_group_1"] = [
             "id" => "editorhooks_group_1",
             "name" => "Действия editorhooks",
             "actions" => [
+                // Параметр "pinned" означает, что действие будет показано не только в выпадающем меню "все действия",
+                // но и на панели, где его будет видно всегда (если хватает места).
+                // "dialog_url" позволяет загрузить HTML и показать диалог
                 [
                     "id" => "editorhooks_action_1",
-                    "name" => "Раз",
+                    "name" => "Показать диалог от плагина",
                     "pinned" => true,
                     "icon" => '<i class="fas fa-solid fa-bug"></i>',
+                    "dialog_url" => $wa_app_url."?plugin=editorhooks&action=productsDialog",
                 ],
+
+                // Параметр "custom_handler" означает, что плагин обработает клик своим собственным JS обработчиком:
+                // $('#js-products-page-content').on('wa_custom_mass_action', function(evt, action, submit_data) {
+                //     if (action.id == 'editorhooks_action_3') {
+                //         ....
+                //     }
+                // });
+                [
+                    "id" => "editorhooks_action_3",
+                    "name" => "Действие с кастомным JS обработчиком",
+                    "custom_handler" => true,
+                ],
+
+                // Отсутствие action_url/redirect_url/dialog_url/custom_handler - это ошибка.
+                // Такие действия показываются в меню, но попытка их применить показывает сообщение о том,
+                // что действие не может быть выполнено.
                 [
                     "id" => "editorhooks_action_2",
-                    "name" => "Два",
+                    "name" => "Не доделанное действие",
                 ],
+
             ]
         ];
 

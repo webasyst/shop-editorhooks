@@ -1,0 +1,47 @@
+{*
+ * HTML (и поведение) соответствует вёрстке компонента .dialog из стилей WA 2.0
+ *}
+<div class="dialog s-products-add-to-category-dialog" id="js-editorhooks-products-mass-action-dialog">
+    <div class="dialog-background"></div>
+    <div class="dialog-body">
+        <div class="dialog-header">
+            <h3>Действие с товарами от плагина</h3>
+        </div>
+        <div class="dialog-content">
+            {waRequest::post()|wa_dumpc}
+        </div>
+        <div class="dialog-footer">
+            <button class="button js-dialog-save" type="button">
+                <span class="s-icon icon size-14" style="display:none"><i class="fas fa-spinner fa-spin"></i></span>
+                <span class="s-name">Применить</span>
+            </button>
+            <button class="js-dialog-close button light-gray" type="button">Отмена</button>
+        </div>
+    </div>
+
+    <script>(function($) { "use strict";
+
+        var $dialog = $("#js-editorhooks-products-mass-action-dialog").removeAttr("id");
+
+        // Вызывается, когда диалог открылся (стал видимым)
+        $dialog.on('wa_dialog_ready', function(evt, action, submit_data, dialog) {
+            initDialog(dialog);
+        });
+
+        // Любой код, отвечающий за логику работы интерфейса внутри диалога
+        function initDialog(dialog) {
+
+            $dialog.on('click', '.js-dialog-save', function() {
+                var $loading = $(this).find('.fa-spinner').closest('.icon').show();
+                setTimeout(function() {
+                    alert('Nope! Not implemented.');
+                    $loading.hide();
+                    dialog.close();
+                }, 500);
+            });
+
+        }
+
+
+    })(jQuery);</script>
+</div>
