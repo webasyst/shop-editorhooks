@@ -51,12 +51,72 @@ HTML;
     }
 
     /**
+     * Добавляет HTML в диалог создания и редактирования категории
+     * backend_prod_category_dialog
+     */
+    public function backendProdCategoryDialog(&$params)
+    {
+        $result = [];
+
+        $params_str = wa_dump_helper(ref(array_keys($params)));
+        foreach (['top', 'storefront', 'publication', 'seo', 'og', 'bottom'] as $key) {
+            $block = <<<HTML
+<div class="s-editorhooks-plugin" style="color:red;">
+    editorhooks backend_prod_category_dialog {$key} <pre>$params_str</pre>
+</div>
+HTML;
+            $result[$key] = $block;
+        }
+
+        // Элементы формы, у которых есть name, отправятся на сервер во время сохранения категории
+        // и будут доступны по хуку category_save, см. метод categorySave() ниже
+        $result['bottom'] .= '<input type="hidden" name="editorhooks['.$params['category']['id'].']" value="'.mt_rand().'" id="js-editorhooks-field">';
+
+        // Пример JS, как сделать валидацию или добавить в форму дополнительные данные без hidden полей.
+        $result['bottom'] .= <<<'EOF'
+            <script>(function() { "use strict";
+
+                // нужно ждать vue_ready promise, иначе в DOM ещё не будет нужного элемента .s-category-form
+                const $dialog = $('#js-editorhooks-field').closest('.wa-dialog');
+                const dialog = $dialog.data('dialog');
+                dialog.options.vue_ready.then(function() {
+
+                    const $category_form = $dialog.find('.s-category-form');
+
+                    // Пример, как добавить данных в сабмит формы (hidden input выше тоже отправится без всякого дополнительного JS)
+                    $category_form.on('wa_save', function(e) {
+                        e.form_data['editorhooks_asdf'] = 'qwer';
+                    });
+
+                    return;
+
+                    // wa_before_save .preventDefault() можно использовать, чтобы подсветить ошибки валидации.
+                    // Этот пример предотвратит первую попытку сохранить категорию.
+                    var nope = true;
+                    $category_form.on('wa_before_save', function(e) {
+                        if (nope) {
+                            console.log('nope!!');
+                            e.preventDefault();
+                            nope = false;
+                        }
+                    });
+
+                });
+
+
+            })();</script>
+EOF;
+
+        return $result;
+    }
+
+    /**
      * В хуке category_save можно прочитать данные, которые плагин добавил в форму категории в диалоге
-     * (см. также backendProdDialog())
+     * (см. также backendProdCategoryDialog())
      */
     public function categorySave(&$params)
     {
-        // waRequest::post('editorhooks')
+        //wa_dumpc(waRequest::post('editorhooks'));
     }
 
     /**
@@ -540,5 +600,109 @@ HTML;
             ]
         ];
 
+    }
+
+    /**
+     * Событие backend_prod_filters позволяет плагину добавить кастомные типы фильтров в раздел со списком товаров в WA2.0
+     *
+     * Возвращаемое значение метода должно содержать массив с информацией о типах фильтров, поддержку которых плагин добавляет.
+     *
+     * $params['collection'] - это объект shopProductsCollection.
+     * $params['filter']['rules'] содержит параметры всех фильтров, которые пользователь настроил в текущем представлении.
+     * Плагин должен обработать свои типы и, используя методы объекта коллекции $params['collection'], добавить свои условия
+     * к выборке товаров.
+     *
+     * Этот хук может вызываться в режиме без контекста конкретного фильтра и коллекции.
+     * $params['filter'] === null, $params['collection'] === null.
+     * ШС ждёт от плагина описания фильтров, которые предоставляет плагин (т.е. возвращаемое значение этого метода),
+     * но без модификации условий конкретной коллекции.
+     */
+    public function backendProdFilters(&$params)
+    {
+        if (!empty($params['filter']['rules'])) {
+            // Плагин должен обработать применённые фильтры, параметры которых хранятся в $params['filter']['rules'],
+            // и изменить условия выборки товаров, используя методы коллекции
+            $collection = $params['collection'];
+            foreach($params['filter']['rules'] as $rule) {
+                if ($rule['type'] === 'editorhooks_radio') {
+                    if ($rule['rules'][0]['rule_params'] === 'red') {
+                        $collection->addWhere('p.id > 0');
+                    }
+                }
+            }
+        }
+
+        // Плагин может добавить несколько типов фильтров.
+        return [
+
+            [
+                'name' => _wp('Тестовый range'),
+                'rule_type' => 'editorhooks_range',
+
+                // replaces_previous
+                // true: когда добавляется новый фильтр этого rule_type, то старый такой же удаляется.
+                // false: может быть сколько угодно добавленных правил этого типа.
+                'replaces_previous' => false,
+
+                'render_type' => 'range',
+                'options' => [
+                    ['value' => '1'],
+                    ['value' => '2'],
+                ],
+            ],
+
+            [
+                'name' => _wp('Тестовый range.date'),
+                'rule_type' => 'editorhooks_range_date',
+                'replaces_previous' => true,
+
+                'render_type' => 'range.date',
+                'options' => [
+                    ['value' => '2022-11-11'],
+                    ['value' => '2023-11-11'],
+                ],
+            ],
+
+            [
+                'name' => _wp('Тестовый radio'),
+                'rule_type' => 'editorhooks_radio',
+                'replaces_previous' => true,
+
+                'render_type' => 'radio',
+                'options' => [
+                    ['value' => '1', 'name' => 'Один'],
+                    ['value' => '0', 'name' => 'Пустое'],
+                    ['value' => 'red', 'name' => 'Красное'],
+                ],
+            ],
+
+            [
+                'name' => _wp('Тестовый checklist'),
+                'rule_type' => 'editorhooks_checklist',
+                'replaces_previous' => true,
+
+                'render_type' => 'checklist',
+                'options' => [
+                    ['value' => 'one', 'name' => 'Один'],
+                    ['value' => 'two', 'name' => 'Два'],
+                    ['value' => 'three', 'name' => 'Три'],
+                ],
+            ],
+
+            [
+                'name' => _wp('Тестовый custom dialog'),
+                'rule_type' => 'editorhooks_custom',
+                'replaces_previous' => true,
+
+                'render_type' => 'custom',
+
+                // Если задано поле 'html', то в диалоге настройки фильтра будет показан этот HTML.
+                //'html' => '<h1>Hello, World!</h1>',
+
+                // Если 'html' отсутствует, то браузер загрузит его с указанного URL 'dialog_url'
+                'dialog_url' => '?plugin=editorhooks&module=products&action=filterDialog',
+            ],
+
+        ];
     }
 }

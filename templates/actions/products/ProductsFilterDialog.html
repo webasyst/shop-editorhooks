@@ -1,0 +1,62 @@
+{*
+ * Параметры фильтра должны уместиться в одну строку [name="rule_params"].
+ * Не обязательно hidden (это может быть text или textarea или что угодно)
+ * но Vue сохранит на сервере только один [name="rule_params"]
+ *}
+
+
+<div class="fields vertical" id="js-editorhooks-dialog-wrapper">
+    <input type="hidden" name="rule_params" value="">
+
+    <div class="field">
+        <div class="name">
+            Поиск
+        </div>
+        <div class="value">
+            <input type="text" value="что-нибудь" id="js-search">
+        </div>
+    </div>
+    <div class="field">
+        <div class="name">
+            Чайку?
+        </div>
+        <div class="value">
+            <label>
+                <input type="radio" name="tea" value="black" checked>
+                Чёрный
+            </label>
+        </div>
+        <div class="value">
+            <label>
+                <input type="radio" name="tea" value="green">
+                Зелёный
+            </label>
+        </div>
+        <div class="value">
+            <label>
+                <input type="radio" name="tea" value="coffee">
+                А можно кофе?
+            </label>
+        </div>
+    </div>
+</div>
+
+<p>Вот так вот</p>
+
+<script>(function() { "use strict";
+
+    var $wrapper = $('#js-editorhooks-dialog-wrapper');
+    var $hidden = $wrapper.find('[name="rule_params"]');
+    var $search_text = $wrapper.find('[type="text"]');
+
+    $wrapper.on('change keyup', serializeParams);
+    serializeParams();
+
+    function serializeParams() {
+        $hidden.val(JSON.stringify([
+            $wrapper.find('[type="radio"][name="tea"]:checked').val(),
+            $search_text.val()
+        ]));
+    }
+
+})();</script>
